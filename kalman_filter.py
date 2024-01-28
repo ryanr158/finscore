@@ -1,73 +1,56 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import yfinance as yf
 
-def kalman(mi,me,ms,age,rt,roth,k401,sp500):
+def kalman(mi, me, ms, age, rt, roth, k401):
+    # Fetch S&P 500 historical data
+    sp500_data = yf.Ticker("^GSPC")
+    sp500_history = sp500_data.history(period="1mo")  # Adjust period as needed
+    sp500 = sp500_history["Close"].values  # Use closing values
+
     # Define Kalman filter parameters
-    initial_state = np.array([mi, me, ms, age, rt, roth, k401, sp500])  # Initial state: [monthly_income, monthly_expenses, monthly_savings, age, risk_tolerance, roth_ira, k401, sp500]
-    initial_covariance = np.eye(8) * 1.0  # Initial covariance matrix
-    process_noise = np.eye(8) * 0.1  # Process noise covariance
-    measurement_noise = 1.0  # Measurement noise variance
+    num_months = len(sp500)  # Number of months based on S&P 500 data
+    initial_state = np.array([mi, me, ms, age, rt, roth, k401, sp500[0]])  # Initial state with initial S&P 500 value
+    initial_covariance = np.eye(8) * 1.0
+    process_noise = np.eye(8) * 0.1
+    measurement_noise = 1.0
 
-    # Simulated historical data for Roth IRA, 401(k), and S&P 500
-    num_months = 60
-    roth_ira = np.random.normal(5000, 1000, num_months)
-    k401 = np.random.normal(10000, 2000, num_months)
-    sp500 = np.random.normal(2000, 500, num_months)
-
-    # Provided inputs
-    monthly_income = np.full(num_months, 20000)
-    monthly_expenses = np.full(num_months, 10000)
-    monthly_savings = np.full(num_months, 10000)
-    age = np.full(num_months, 24)
-    risk_tolerance = np.linspace(0.0, 1.0, num_months)  # Adjusted risk tolerance range
-
-    # Kalman filter initialization
+    # Initialize Kalman filter
     current_state = initial_state
     current_covariance = initial_covariance
-
-    # Initialize lists to store states and scores
-    filtered_states = []
-    predicted_states = []
     scores = []
 
     # Adjusted weights for each measurement
     weights = np.array([0.1, 0.1, 0.1, 0.1, 0.1, 0.15, 0.15, 0.2])  # Adjust weights based on interpretation
 
-    # Kalman filter loop
     for i in range(num_months):
         # Prediction step
         predicted_state = current_state
         predicted_covariance = current_covariance + process_noise
 
-        # Update step for each measurement
+        # Update step with measurements
         measurements = np.array([
-            monthly_savings[i], monthly_income[i], monthly_expenses[i], age[i], risk_tolerance[i],
-            roth_ira[i], k401[i], sp500[i]
+            ms, mi, me, age, rt, roth, k401, sp500[i]
         ])
         kalman_gains = current_covariance.diagonal() / (current_covariance.diagonal() + measurement_noise)
         current_state = predicted_state + kalman_gains * (measurements - predicted_state)
         current_covariance = np.diag(1 - kalman_gains) * predicted_covariance
 
-        # Calculate the aggregated score
+        # Calculate the financial score
         score = np.dot(current_state, weights)
         scores.append(score)
 
-        # Store results for plotting
-        filtered_states.append(current_state.copy())
-        predicted_states.append(predicted_state.copy())
-
-    # Convert lists to NumPy arrays for plotting
-    filtered_states = np.array(filtered_states)
-    predicted_states = np.array(predicted_states)
-
-    # Plotting Results
+    # Plotting the results
     plt.figure(figsize=(12, 6))
-
     plt.plot(scores, label='Financial Score', linestyle='-', marker='o')
-
     plt.xlabel('Month')
     plt.ylabel('Financial Score')
     plt.legend()
     plt.title('Kalman Filter for Financial Metrics Prediction with Adjusted Financial Score')
     plt.show()
-        
+
+    return scores[-1]
+
+# Example usage of the function with initial parameters
+final_score = kalman(mi=20000, me=10000, ms=10000, age=30, rt=0.5, roth=5000, k401=10000)
+print("Final financial score:", final_score)
