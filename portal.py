@@ -70,6 +70,7 @@ class App(customtkinter.CTk):
         self.tabview.add("Recommendations")
         self.tabview.tab("Investing").grid_columnconfigure(0, weight=1)  # configure grid of individual tabs
         self.tabview.tab("Spending").grid_columnconfigure(0, weight=1)
+        self.tabview.tab("Saving").grid_columnconfigure(0, weight=1)
 
         # set default values
         self.appearance_mode_optionemenu.set("Light")
@@ -102,12 +103,10 @@ class App(customtkinter.CTk):
 
 
     def create_spending_tab(self):
-        label_expense_description = customtkinter.CTkLabel(self.tabview.tab("Spending"), text="Enter expense description:", anchor="w")
+        label_expense_description = customtkinter.CTkLabel(self.tabview.tab("Spending"), text="Enter monthly expenses:", anchor="w")
         label_expense_description.grid(row=0, column=0, padx=20, pady=(20, 10), sticky="w")
 
-        self.expense_description_entry = customtkinter.CTkEntry(self.tabview.tab("Spending"), width=70,
-                                                                font=customtkinter.CTkFont(size=14))
-        self.expense_description_entry.grid(row=0, column=1, padx=0, pady=(20, 10), sticky="w")
+        
 
         label_expense_category = customtkinter.CTkLabel(self.tabview.tab("Spending"), text="Select expense category and amount:", anchor="w")
         label_expense_category.grid(row=1, column=0, padx=20, pady=(0, 10), sticky="w")
@@ -437,7 +436,6 @@ class App(customtkinter.CTk):
             print(f"Error fetching data for {stock_symbol}: {e}")
     
     def add_expense_and_plot(self):
-        expense_description = self.expense_description_entry.get()
         expense_category = self.expense_category_var.get()
         expense_amount = float(self.expense_amount_entry.get())
 
