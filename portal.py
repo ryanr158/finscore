@@ -100,7 +100,6 @@ class App(customtkinter.CTk):
         self.create_saving_tab()
         self.create_recommendations_tab()
 
-        self.gpt_api_key = "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"
 
     def create_spending_tab(self):
         label_expense_description = customtkinter.CTkLabel(self.tabview.tab("Spending"), text="Enter expense description:", anchor="w")
@@ -138,7 +137,7 @@ class App(customtkinter.CTk):
         # Reset the investments data
         self.expenses_data.clear()
 
-        # Refresh the plot (this will now show an empty or default state)
+        # Clear the plot
         self.plot_pie_chart("Spending", [], [])
 
     def create_investing_tab(self):
@@ -176,7 +175,7 @@ class App(customtkinter.CTk):
         # Reset the investments data
         self.investments_data.clear()
 
-        # Refresh the plot (this will now show an empty or default state)
+        # Clear the plot
         self.plot_pie_chart("Investing", [], [])
 
     def create_saving_tab(self):
@@ -208,14 +207,14 @@ class App(customtkinter.CTk):
         self.other_investments_entry = customtkinter.CTkEntry(self.tabview.tab("Saving"), font=customtkinter.CTkFont(size=14))
         self.other_investments_entry.grid(row=1, column=1, padx=20, pady=10, sticky="w")
 
-        # Add a button to plot savings data
+        # Button to plot savings data
         self.plot_savings_button = customtkinter.CTkButton(self.tabview.tab("Saving"), text="Plot Savings",
                                                         command=self.add_saving_and_plot,
                                                         font=customtkinter.CTkFont(size=14))
         self.plot_savings_button.grid(row=3, column=0, columnspan=6, padx=20, pady=(10, 20), sticky="nsew")
     
     def create_recommendations_tab(self):
-        # Configure grid columns and rows for the "Recommendations" tab
+        # Configure grid columns and rows
         for i in range(3):  # Using 3 columns
             self.tabview.tab("Recommendations").grid_columnconfigure(i, weight=1)
 
@@ -362,16 +361,26 @@ class App(customtkinter.CTk):
 
         sigmoid = 1 / (1 + np.exp(-z_score))
         self.finscore = sigmoid * 100
-
+        
+        end=int(self.finscore%10)
+        print("end: ",end)
+        ending=""
+        if end==2:
+            ending="nd"
+        elif end==3:
+            ending="rd"
+        else:
+            ending="th"
+        print("ending: ",ending)
         if z_score < -1:
             fin_color = "red"
-            self.finscore_description += f"Keep going! You are currently in the {self.finscore:.0f}th percentile of people in your age group. While this may be below the average, it's important to see this as an opportunity for growth and improvement in managing your finances. To improve your position, consider reviewing and adjusting your current financial strategies. This might involve more disciplined budgeting, exploring new savings methods, or seeking advice on effective investment strategies. Remember, everyone's financial journey is unique, and progress takes time. Staying informed, adapting to new financial insights, and being proactive are crucial steps towards improving your financial standing and achieving long-term financial success."
+            self.finscore_description += f"Keep going! You are currently in the {self.finscore:.0f}{ending} percentile of people in your age group. While this may be below the average, it's important to see this as an opportunity for growth and improvement in managing your finances. To improve your position, consider reviewing and adjusting your current financial strategies. This might involve more disciplined budgeting, exploring new savings methods, or seeking advice on effective investment strategies. Remember, everyone's financial journey is unique, and progress takes time. Staying informed, adapting to new financial insights, and being proactive are crucial steps towards improving your financial standing and achieving long-term financial success."
         elif -1 <= z_score <= 1:
             fin_color = "orange"
-            self.finscore_description += f"You are in the {self.finscore:.0f}th percentile of people in your age group! This is a great accomplishment as it means you are right in line with the average financial standing of your peers. Being at this percentile indicates that you have a stable and balanced approach to your financial health. To maintain or further improve your position, consider improving on your current financial strategies while remaining open to new ideas for optimizing your savings, investments, and expenditures. Remember, effective financial planning is a continual journey, and staying informed and proactive is essential for long-term financial success."
+            self.finscore_description += f"You are in the {self.finscore:.0f}{ending} percentile of people in your age group! This is a great accomplishment as it means you are right in line with the average financial standing of your peers. Being at this percentile indicates that you have a stable and balanced approach to your financial health. To maintain or further improve your position, consider improving on your current financial strategies while remaining open to new ideas for optimizing your savings, investments, and expenditures. Remember, effective financial planning is a continual journey, and staying informed and proactive is essential for long-term financial success."
         else:
             fin_color = "green"
-            self.finscore_description += f"Congrats! You are in the {self.finscore:.0f}th percentile of people in your age group! Keep up the good work managing your finances. This high percentile indicates that your financial health is better than many of your peers. To maintain or even improve this standing, consider continuing your current financial strategies, and always be open to exploring new ways to optimize your savings, investments, and expenditures. Remember, financial planning is an ongoing process, and staying informed and proactive is key to long-term financial success."
+            self.finscore_description += f"Congrats! You are in the {self.finscore:.0f}{ending} percentile of people in your age group! Keep up the good work managing your finances. This high percentile indicates that your financial health is better than many of your peers. To maintain or even improve this standing, consider continuing your current financial strategies, and always be open to exploring new ways to optimize your savings, investments, and expenditures. Remember, financial planning is an ongoing process, and staying informed and proactive is key to long-term financial success."
 
 
         self.finscore_label.configure(text=f"FinScore: {self.finscore:.2f}")
@@ -388,7 +397,7 @@ class App(customtkinter.CTk):
         if "Close" in hist.columns:
             prices = hist["Close"].dropna().tolist()
 
-            # Calculate the volatility (standard deviation) of price changes
+            # Calculate the volatility of price changes
             if len(prices) > 1:
                 returns = np.diff(prices) / prices[:-1]
                 volatility = np.std(returns)
@@ -458,15 +467,19 @@ class App(customtkinter.CTk):
             "Other Investments": total_other_investments
         }
 
+        for key in list(self.saving_data.keys()):
+            if self.saving_data[key] == 0:
+                del self.saving_data[key]
+
         # Plot the data
         self.plot_pie_chart("Saving", list(self.saving_data.keys()), list(self.saving_data.values()))
 
     def plot_pie_chart(self, tab_name, labels, values):
         try:
-            plt.clf()  # Clear existing plot
+            plt.clf()
             fig, ax = plt.subplots()
 
-            # Ensure all values are non-negative
+            # Make values positive
             non_negative_values = [max(0, val) for val in values]
 
             ax.pie(non_negative_values, labels=labels, autopct='%1.1f%%', startangle=90)
@@ -500,39 +513,6 @@ class App(customtkinter.CTk):
 
         except Exception as e:
             print(f"Error plotting pie chart: {e}")
-
-    # openai integration
-    def search_and_display(self):
-        query = self.entry.get()
-
-        if query:
-            # Use the OpenAI API to get a response
-            response = self.chatgpt_response(query)
-
-            # Display the response in a message box
-            messagebox.showinfo("Search Result", response)
-
-    def chatgpt_response(self, query):
-        openai.api_key = self.gpt_api_key
-
-        # Define the prompt for ChatGPT
-        prompt = f"Search for: {query}"
-
-        try:
-            # Make an API call to ChatGPT
-            response = openai.Completion.create(
-                engine="text-davinci-003",
-                prompt=prompt,
-                max_tokens=50  # Adjust max_tokens as needed
-            )
-
-            # Extract the generated answer from the response
-            answer = response.choices[0].text
-
-            return answer
-        except Exception as e:
-            return f"Error: {e}"
-
 
 
     def open_input_dialog_event(self):
