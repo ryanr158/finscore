@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import yfinance as yf
 
-def kalman(mi, me, ms, age, rt, roth, k401):
+def kalman(mi, me, ms, age, rt):
     # Fetch S&P 500 historical data
     sp500_data = yf.Ticker("^GSPC")
     sp500_history = sp500_data.history(period="1mo")  # Adjust period as needed
@@ -10,9 +10,9 @@ def kalman(mi, me, ms, age, rt, roth, k401):
 
     # Define Kalman filter parameters
     num_months = len(sp500)  # Number of months based on S&P 500 data
-    initial_state = np.array([mi, me, ms, age, rt, roth, k401, sp500[0]])  # Initial state with initial S&P 500 value
-    initial_covariance = np.eye(8) * 1.0
-    process_noise = np.eye(8) * 0.1
+    initial_state = np.array([mi, me, ms, age, rt, sp500[0]])  # Initial state with initial S&P 500 value
+    initial_covariance = np.eye(6) * 1.0
+    process_noise = np.eye(6) * 0.1
     measurement_noise = 1.0
 
     # Initialize Kalman filter
@@ -21,7 +21,7 @@ def kalman(mi, me, ms, age, rt, roth, k401):
     scores = []
 
     # Adjusted weights for each measurement
-    weights = np.array([0.1, 0.1, 0.1, .3, 0.15, 0.15, 0.15, 0.1])  # Adjust weights based on interpretation
+    weights = np.array([0.25, 0.15, 0.25, 0.2, 0.1, 0.05])  # Adjust weights based on interpretation
 
     for i in range(num_months):
         # Prediction step
@@ -29,7 +29,7 @@ def kalman(mi, me, ms, age, rt, roth, k401):
         predicted_covariance = current_covariance + process_noise
 
         # Update step with measurements
-        measurements = np.array([ms, mi, me, age, rt, roth, k401, sp500[i]], dtype=float)
+        measurements = np.array([ms, mi, me, age, rt, sp500[i]], dtype=float)
         predicted_state = predicted_state.astype(float)
         kalman_gains = current_covariance.diagonal() / (current_covariance.diagonal() + measurement_noise)
         
